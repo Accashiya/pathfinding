@@ -1,17 +1,18 @@
 extends Node3D
 class_name Grid
 
+######### For Debugging #############
 @export var startNode:Node3D
 @export var endNode:Node3D
+@export var display_debug_stuff:bool
+#####################################
+
 @export var walkableNode:StaticBody3D
 @export var unwalkableMask: int
-
-# unwalkable is layer/mask 2
-var gridWorldSize:Vector2
 @export var nodeRadius:float
+
+var gridWorldSize:Vector2
 var gridNodeDict:Dictionary[Vector2i, GridNode]
-
-
 
 var nodeDiameter:float
 var gridSizeX:int
@@ -76,34 +77,25 @@ func GetNeighbours(node:GridNode) -> Array[GridNode]:
 				neighbours.append(gridNodeDict[Vector2i(checkX, checkY)])
 	return neighbours
 
-var path:Array[GridNode]
-
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	if gridNodeDict == null:
-		for cell in gridNodeDict:
-			var node = gridNodeDict[cell]
+	if display_debug_stuff:
+		if gridNodeDict != null:
+			for cell in gridNodeDict:
+				var node = gridNodeDict[cell]
 
-			var color = Color.GREEN if node.walkable else Color.RED
+				var color = Color.GREEN if node.walkable else Color.RED
 
-			DebugDraw.draw_rect_3d(node.worldPosition, nodeDiameter*0.9, color) # Draw debug rect
+				DebugDraw.draw_rect_3d(node.worldPosition, nodeDiameter*0.9, color) # Draw debug rect
 
-	if startNode != null:
-		var start:GridNode = GetNodeFromPosition(startNode.position)
-		var color = Color.AQUA
+		if startNode != null:
+			var start:GridNode = GetNodeFromPosition(startNode.position)
+			var color = Color.AQUA
 
-		DebugDraw.draw_rect_3d(start.worldPosition, nodeDiameter*0.92, color) # Draw debug rect
+			DebugDraw.draw_rect_3d(start.worldPosition, nodeDiameter*0.95, color) # Draw debug rect
 
-	if endNode != null:
-		var end:GridNode = GetNodeFromPosition(endNode.position)
-		var color = Color.YELLOW
+		if endNode != null:
+			var end:GridNode = GetNodeFromPosition(endNode.position)
+			var color = Color.YELLOW
 
-		DebugDraw.draw_rect_3d(end.worldPosition, nodeDiameter*0.92, color) # Draw debug rect
-
-	if path != null:
-		for n in range(path.size()):
-			var node = path[n]
-			var color = Color.WHITE
-			DebugDraw.draw_rect_3d(node.worldPosition, nodeDiameter*0.90, color)
-		
-	
+			DebugDraw.draw_rect_3d(end.worldPosition, nodeDiameter*0.95, color) # Draw debug rect

@@ -1,52 +1,55 @@
+class_name Pathfinding
 extends Node3D
+
 @export var grid:Grid
+@export var path_request_manager:PathRequestManager
 
-func _init():
-	pass
-
-func _process(delta):
-	FindPath(grid.startNode.position, grid.endNode.position)
+func start_find_path(start_pos:Vector3, end_pos:Vector3) -> void:
+	FindPath(start_pos, end_pos)
 
 func FindPath(startPos:Vector3, endPos:Vector3) -> void:
+	var waypoints:Array[Vector3] = []
+	var path_success:bool = false
+	
 	var startNode:GridNode = grid.GetNodeFromPosition(startPos)
 	var endNode:GridNode = grid.GetNodeFromPosition(endPos)
 
-	var openSet:Array[GridNode]
-	var closedSet:Dictionary[int, GridNode]
-	var closedSetCount:int = 0
+	if !startNode.walkable or !endNode.walkable:
+		return
 
-	openSet.append(startNode)
+	var openSet = MinHeap.new()
+	var closedSet:= {}
 
-	while openSet.size() > 0:
-		var currentNode:GridNode = openSet[0]
-		for i in range(1, openSet.size()):
-			if (openSet[i].fCost < currentNode.fCost || openSet[i].fCost == currentNode.fCost && openSet[i].hCost < currentNode.hCost):
-				currentNode = openSet[i]
+	openSet.Add(startNode)
 
-		
-		openSet.erase(currentNode)
-		closedSet[closedSetCount] = currentNode
-		closedSetCount = closedSetCount+1
+	while openSet.Size() > 0:
+		var currentNode:GridNode = openSet.Pop()
+		closedSet[currentNode] = true
 
 		if currentNode == endNode:
-			print("end reached!")
-			RetracePath(startNode, endNode)
-			return
+			path_success = true
+			break
 
 		for neighbour:GridNode in grid.GetNeighbours(currentNode):
-			if (!neighbour.walkable || closedSet.values().has(neighbour)):
+			if (!neighbour.walkable || closedSet.has(neighbour)):
 				continue
 			
+			var inOpenSet = openSet.Contains(neighbour)
 			var newMovementCostToNeighbour:int = currentNode.gCost + GetDistance(currentNode, neighbour)
-			if (newMovementCostToNeighbour < neighbour.gCost || !openSet.has(neighbour)):
+			if (newMovementCostToNeighbour < neighbour.gCost || !inOpenSet):
 				neighbour.gCost = newMovementCostToNeighbour
 				neighbour.hCost = GetDistance(neighbour, endNode)
 				neighbour.parent = currentNode
 
-				if !openSet.has(neighbour):
-					openSet.append(neighbour)
-		
-
+				if !inOpenSet:
+					openSet.Add(neighbour)
+				else:
+					openSet.UpdateItem(neighbour)
+	
+	await get_tree().process_frame
+	if path_success:
+		waypoints = RetracePath(startNode, endNode)
+	path_request_manager.finished_processing(waypoints, path_success)
 
 func GetDistance(nodeA:GridNode, nodeB:GridNode) -> int:
 	var dstX:int = abs(nodeA.gridX - nodeB.gridX)
@@ -57,7 +60,7 @@ func GetDistance(nodeA:GridNode, nodeB:GridNode) -> int:
 	else:
 		return 14 * dstX + 10 * (dstY-dstX)
 
-func RetracePath(startNode:GridNode, endNode:GridNode) -> void:
+func RetracePath(startNode:GridNode, endNode:GridNode) -> Array[Vector3]:
 	var path:Array[GridNode]
 	var currentNode = endNode
 
@@ -65,6 +68,21 @@ func RetracePath(startNode:GridNode, endNode:GridNode) -> void:
 		path.append(currentNode)
 		currentNode = currentNode.parent
 
-	path.reverse()
+	var waypoints:Array[Vector3] = simplify_path(path)
+	waypoints.reverse()
 
-	grid.path = path
+	return waypoints
+
+func simplify_path(path:Array[GridNode]) -> Array[Vector3]:
+	var waypoints:Array[Vector3]
+	var old_direction:Vector2 = Vector2.ZERO
+
+	for i in range(1, path.size()):
+		var new_direction:Vector2 = Vector2(path[i-1].gridX - path[i].gridX, path[i-1].gridY - path[i].gridY)
+
+		if new_direction != old_direction:
+			waypoints.append(path[i].worldPosition)
+		
+		old_direction = new_direction
+	
+	return waypoints
