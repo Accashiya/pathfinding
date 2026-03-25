@@ -35,7 +35,7 @@ func FindPath(startPos:Vector3, endPos:Vector3) -> void:
 				continue
 			
 			var inOpenSet = openSet.Contains(neighbour)
-			var newMovementCostToNeighbour:int = currentNode.gCost + GetDistance(currentNode, neighbour)
+			var newMovementCostToNeighbour:int = currentNode.gCost + GetDistance(currentNode, neighbour) + neighbour.terrain_cost
 			if (newMovementCostToNeighbour < neighbour.gCost || !inOpenSet):
 				neighbour.gCost = newMovementCostToNeighbour
 				neighbour.hCost = GetDistance(neighbour, endNode)
@@ -67,6 +67,7 @@ func RetracePath(startNode:GridNode, endNode:GridNode) -> Array[Vector3]:
 	while currentNode != startNode:
 		path.append(currentNode)
 		currentNode = currentNode.parent
+		print(currentNode.terrain_cost)
 
 	var waypoints:Array[Vector3] = simplify_path(path)
 	waypoints.reverse()

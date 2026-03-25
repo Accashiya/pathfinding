@@ -17,4 +17,4 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-DebugDraw="*res://Scripts/DebugDraw.gd"
+DebugDraw="*res://Scripts/misc_scripts/DebugDraw.gd"

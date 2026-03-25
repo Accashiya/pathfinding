@@ -1,11 +1,31 @@
-[gd_scene load_steps=12 format=3 uid="uid://d08xkqq8midtk"]
+[gd_scene load_steps=17 format=3 uid="uid://d08xkqq8midtk"]
 
 [ext_resource type="Material" uid="uid://d4b0lhfidctq4" path="res://Floor.tres" id="1_e2o6t"]
-[ext_resource type="Script" uid="uid://carexutx7b7v1" path="res://Scripts/Grid.gd" id="1_feb5d"]
-[ext_resource type="Script" uid="uid://dw6ttwb52753c" path="res://Scripts/Pathfinding.gd" id="2_fc0e3"]
+[ext_resource type="Script" uid="uid://b2v46yiql2urf" path="res://Scripts/pathfinding/Grid.gd" id="1_ryrav"]
+[ext_resource type="Script" uid="uid://cujglwp7f58rf" path="res://Scripts/pathfinding/Pathfinding.gd" id="2_eow3j"]
 [ext_resource type="Material" uid="uid://brg4ssroypnmg" path="res://Box.tres" id="2_feb5d"]
-[ext_resource type="Script" uid="uid://wku0kna6po4m" path="res://Scripts/path_request_manager.gd" id="3_ryrav"]
+[ext_resource type="Script" uid="uid://b7k5305httm2l" path="res://Scripts/pathfinding/terrain_types.gd" id="2_j5wjh"]
+[ext_resource type="Script" uid="uid://cnxerkewvm4v2" path="res://Scripts/pathfinding/path_request_manager.gd" id="3_j5wjh"]
 [ext_resource type="Script" uid="uid://c08cyser2p3ll" path="res://Scripts/unit.gd" id="5_7jktm"]
+
+[sub_resource type="Resource" id="Resource_eow3j"]
+script = ExtResource("2_j5wjh")
+t_layer = 1
+t_cost = 20
+metadata/_custom_type_script = "uid://b7k5305httm2l"
+
+[sub_resource type="Resource" id="Resource_j5wjh"]
+script = ExtResource("2_j5wjh")
+t_layer = 3
+metadata/_custom_type_script = "uid://b7k5305httm2l"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ryrav"]
+albedo_color = Color(0.28887355, 0.2700288, 0.21159768, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_eow3j"]
+material = SubResource("StandardMaterial3D_ryrav")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_e2o6t"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_fc0e3"]
 material = ExtResource("1_e2o6t")
@@ -16,28 +36,54 @@ size = Vector3(2, 0.1, 2)
 [sub_resource type="BoxMesh" id="BoxMesh_ryrav"]
 material = ExtResource("2_feb5d")
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_e2o6t"]
-
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_feb5d"]
 
 [node name="Game" type="Node3D"]
 
-[node name="A*" type="Node3D" parent="." node_paths=PackedStringArray("startNode", "endNode", "walkableNode")]
-script = ExtResource("1_feb5d")
-startNode = NodePath("../Player")
-endNode = NodePath("../Target")
-walkableNode = NodePath("../Floor")
+[node name="A*" type="Node3D" parent="."]
+
+[node name="grid" type="Node3D" parent="A*" node_paths=PackedStringArray("startNode", "endNode", "walkableNode")]
+script = ExtResource("1_ryrav")
+startNode = NodePath("../../Player")
+endNode = NodePath("../../Target")
+walkableNode = NodePath("../../Floor")
 unwalkableMask = 2
-nodeRadius = 0.5
+nodeRadius = 0.2
+walkable_regions = Array[ExtResource("2_j5wjh")]([SubResource("Resource_eow3j"), SubResource("Resource_j5wjh")])
+blur_size = 2
 
 [node name="Pathfinding" type="Node3D" parent="A*" node_paths=PackedStringArray("grid", "path_request_manager")]
-script = ExtResource("2_fc0e3")
-grid = NodePath("..")
+script = ExtResource("2_eow3j")
+grid = NodePath("../grid")
 path_request_manager = NodePath("../PathfindingManager")
 
 [node name="PathfindingManager" type="Node3D" parent="A*" node_paths=PackedStringArray("pathfinding")]
-script = ExtResource("3_ryrav")
+script = ExtResource("3_j5wjh")
 pathfinding = NodePath("../Pathfinding")
+
+[node name="Road" type="StaticBody3D" parent="."]
+transform = Transform3D(3.5697768, 0, -0.042240728, 0, 5, 0, 0.017258326, 0, 8.737122, 6.4544744, -2.2108107, 3.5625186)
+collision_layer = 4
+collision_mask = 4
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Road"]
+layers = 4
+mesh = SubResource("BoxMesh_eow3j")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Road"]
+shape = SubResource("BoxShape3D_e2o6t")
+
+[node name="Road2" type="StaticBody3D" parent="."]
+transform = Transform3D(0.34615186, 0, 15.305995, 0, 5, 0, -5.020718, 0, 1.0552671, -2.3048925, -1.799532, -1.7104768)
+collision_layer = 4
+collision_mask = 4
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Road2"]
+layers = 4
+mesh = SubResource("BoxMesh_eow3j")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Road2"]
+shape = SubResource("BoxShape3D_e2o6t")
 
 [node name="Floor" type="StaticBody3D" parent="."]
 transform = Transform3D(10, 0, 0, 0, 5, 0, 0, 0, 10, 0, 0, 0)
@@ -52,7 +98,7 @@ shape = SubResource("BoxShape3D_7jktm")
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
 
 [node name="Box" type="StaticBody3D" parent="Boxes"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.155443, 0, -3.8149188)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5299058, 0, 2.4967139)
 collision_layer = 2
 collision_mask = 2
 
@@ -63,7 +109,7 @@ mesh = SubResource("BoxMesh_ryrav")
 shape = SubResource("BoxShape3D_e2o6t")
 
 [node name="Box2" type="StaticBody3D" parent="Boxes"]
-transform = Transform3D(5.655734, 0, 0, 0, 1, 0, 0, 0, 1, 0.09421849, 0, 2.3268719)
+transform = Transform3D(2.7966552, 0, 0, 0, 1, 0, 0, 0, 2.9988506, -0.9394319, 0, 1.812458)
 collision_layer = 2
 collision_mask = 2
 
@@ -74,7 +120,7 @@ mesh = SubResource("BoxMesh_ryrav")
 shape = SubResource("BoxShape3D_e2o6t")
 
 [node name="Box3" type="StaticBody3D" parent="Boxes"]
-transform = Transform3D(2, 0, 0, 0, 2.1542625, 0, 0, 0, 2.99173, -3.5507927, 0, 2.8880262)
+transform = Transform3D(1.2144508, 0, 0, 0, 2.1542625, 0, 0, 0, 1.4850352, -0.6038258, 0, -2.9228768)
 collision_layer = 2
 collision_mask = 2
 
@@ -85,7 +131,7 @@ mesh = SubResource("BoxMesh_ryrav")
 shape = SubResource("BoxShape3D_e2o6t")
 
 [node name="Box4" type="StaticBody3D" parent="Boxes"]
-transform = Transform3D(8.989206, 0, 0, 0, 1, 0, 0, 0, 2.3014324, 1.912137, 0, -1.1708927)
+transform = Transform3D(1.4687109, 0, 0, 0, 1, 0, 0, 0, 1.5827693, 3.09688, 0, -1.1708927)
 collision_layer = 2
 collision_mask = 2
 
@@ -101,17 +147,18 @@ projection = 1
 size = 24.215
 
 [node name="Player" type="Node3D" parent="." node_paths=PackedStringArray("target", "path_request_manager", "pathfinding")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2519364, 0, -8.094711)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.486889, 0, 4.654455)
 script = ExtResource("5_7jktm")
 target = NodePath("../Target")
 path_request_manager = NodePath("../A*/PathfindingManager")
 pathfinding = NodePath("../A*/Pathfinding")
+display_debug_stuff = true
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Player"]
 mesh = SubResource("CapsuleMesh_feb5d")
 
 [node name="Target" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6695762, 0, 8.590098)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.986665, 0, 8.590098)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Target"]
 mesh = SubResource("CapsuleMesh_feb5d")

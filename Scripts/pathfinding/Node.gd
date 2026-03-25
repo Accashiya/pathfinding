@@ -8,6 +8,7 @@ var gridY:int
 
 var parent:GridNode
 
+var terrain_cost:int
 var gCost:int
 var hCost:int
 var fCost:int:
@@ -19,12 +20,13 @@ var heapIndex:int:
 	set(x):
 		heapIndex = x
 
-func _init(_walkable:bool, _worldPosition:Vector3, _x:int, _y:int):
+func _init(_walkable:bool, _worldPosition:Vector3, _x:int, _y:int, _terrain_cost:int):
 	walkable = _walkable
 	worldPosition = _worldPosition
 
 	gridX = _x
 	gridY = _y
+	terrain_cost = _terrain_cost
 
 func CompareTo(node:GridNode) -> int:
 	var compare:int = -1 if (fCost < node.fCost) else 0 if (fCost == node.fCost) else 1
